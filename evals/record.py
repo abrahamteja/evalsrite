@@ -283,7 +283,7 @@ class DummyRecorder(RecorderBase):
         super().__init__(run_spec)
         self.log = log
 
-    def record_event(self, type, data=None, sample_id=None):
+    def record_event(self, type, data, sample_id=None):
         from evals.registry import registry
 
         if self.run_spec is None:
