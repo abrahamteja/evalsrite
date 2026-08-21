@@ -46,7 +46,7 @@ def _index_samples(samples: List[Any]) -> List[Tuple[Any, int]]:
     return work_items
 
 
-def set_max_samples(max_samples: int):
+def set_max_samples(max_samples: Optional[int]):
     global _MAX_SAMPLES
     _MAX_SAMPLES = max_samples
 
