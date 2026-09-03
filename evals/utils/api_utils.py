@@ -12,8 +12,10 @@ def create_retrying(func: callable, retry_exceptions: tuple[Exception], *args, *
     """
     Retries given function if one of given exceptions is raised.
 
-    Gives up after EVALS_API_RETRY_MAX_TIME seconds (default 300) so a
-    persistent RateLimit/outage cannot hang an eval worker forever.
+    Bounds retries with EVALS_API_RETRY_MAX_TIME (default 300 seconds),
+    re-raising the last retryable exception when the budget is exhausted.
+    This does not interrupt an in-flight call; configure request timeouts
+    separately on the underlying client.
     """
 
     @backoff.on_exception(
