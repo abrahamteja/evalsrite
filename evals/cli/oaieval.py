@@ -85,7 +85,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--http-fail-percent-threshold",
         type=int,
         default=5,
-        help="The acceptable percentage threshold of HTTP requests that can fail. Default is 5, meaning 5%% of total HTTP requests can fail without causing any issues. If the failure rate goes beyond this threshold, suitable action should be taken or the process will be deemed as failing, but still stored locally.",
+        help="The percentage of HTTP requests to --http-run-url that are allowed to fail before the run raises an error. Default is 5, meaning up to 5%% of requests may fail without raising. Regardless of this threshold, any batch of events that fails to send over HTTP -- whether due to a connection error or a non-OK HTTP response -- is always saved to the local fallback log, so no events are lost; the threshold only controls when the run fails loudly.",
     )
 
     parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=False)
@@ -121,8 +121,9 @@ def run(args: OaiEvalArguments, registry: Optional[Registry] = None) -> str:
 
     visible = args.visible if args.visible is not None else (args.max_samples is None)
 
-    if args.max_samples is not None:
-        evals.eval.set_max_samples(args.max_samples)
+    # Establish per-run state even when there is no sample cap, clearing any
+    # module-global limit left by an earlier in-process invocation.
+    evals.eval.set_max_samples(args.max_samples)
 
     registry = registry or Registry()
     if args.registry_path:
@@ -227,7 +228,9 @@ def run(args: OaiEvalArguments, registry: Optional[Registry] = None) -> str:
     try:
         add_token_usage_to_result(result, recorder)
     except Exception as e:
-        logger.error(f"Failed to add token usage to result: {e}. Eval results will be reported and are not affected.")
+        logger.error(
+            f"Failed to add token usage to result: {e}. Eval results will be reported and are not affected."
+        )
     recorder.record_final_report(result)
 
     if not (args.dry_run or args.local_run):
@@ -266,6 +269,33 @@ def build_recorder(
     )
 
 
+def flatten_usage(usage: Any, prefix: str = "") -> dict[str, Any]:
+    """
+    Flatten a usage object into a mapping of dotted key -> scalar value.
+
+    Modern OpenAI usage payloads nest token breakdowns under
+    `completion_tokens_details` and `prompt_tokens_details`, so a shallow
+    `dict(usage)` leaves model objects (rather than ints) as values. Recursing
+    keeps those breakdowns -- notably `reasoning_tokens` -- available for
+    aggregation instead of dropping or choking on them.
+    """
+    if hasattr(usage, "model_dump"):  # pydantic v2, used by openai>=1.0
+        usage = usage.model_dump()
+    elif hasattr(usage, "dict"):  # pydantic v1
+        usage = usage.dict()
+    elif not isinstance(usage, Mapping):
+        usage = dict(usage)
+
+    flat: dict[str, Any] = {}
+    for key, value in usage.items():
+        name = f"{prefix}{key}"
+        if isinstance(value, Mapping) or hasattr(value, "model_dump"):
+            flat.update(flatten_usage(value, prefix=f"{name}."))
+        else:
+            flat[name] = value
+    return flat
+
+
 def add_token_usage_to_result(result: dict[str, Any], recorder: RecorderBase) -> None:
     """
     Add token usage from logged sampling events to the result dictionary from the recorder.
@@ -274,14 +304,21 @@ def add_token_usage_to_result(result: dict[str, Any], recorder: RecorderBase) ->
     sampling_events = recorder.get_events("sampling")
     for event in sampling_events:
         if "usage" in event.data:
-            usage_events.append(dict(event.data["usage"]))
+            usage_events.append(flatten_usage(event.data["usage"]))
     logger.info(f"Found {len(usage_events)}/{len(sampling_events)} sampling events with usage data")
     if usage_events:
-        # Sum up the usage of all samples (assumes the usage is the same for all samples)
-        total_usage = {
-            key: sum(u[key] if u[key] is not None else 0 for u in usage_events)
-            for key in usage_events[0]
-        }
+        # Sum up the usage of all samples. Keys are unioned across events rather
+        # than taken from the first one, since which detail fields a model
+        # returns can vary between samples.
+        all_keys = {key for usage in usage_events for key in usage}
+        total_usage: dict[str, int] = {}
+        for key in sorted(all_keys):
+            values = [usage.get(key) for usage in usage_events]
+            numeric = [v for v in values if isinstance(v, int) and not isinstance(v, bool)]
+            if len(numeric) < len([v for v in values if v is not None]):
+                logger.debug(f"Ignoring non-numeric values while aggregating usage key {key}")
+            if numeric:
+                total_usage[key] = sum(numeric)
         total_usage_str = "\n".join(f"{key}: {value:,}" for key, value in total_usage.items())
         logger.info(f"Token usage from {len(usage_events)} sampling events:\n{total_usage_str}")
         for key, value in total_usage.items():

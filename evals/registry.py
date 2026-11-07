@@ -23,8 +23,6 @@ from evals.base import BaseEvalSpec, CompletionFnSpec, EvalSetSpec, EvalSpec
 from evals.elsuite.modelgraded.base import ModelGradedSpec
 from evals.utils.misc import make_object
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
 logger = logging.getLogger(__name__)
 
 DEFAULT_PATHS = [
@@ -110,6 +108,7 @@ class Registry:
     @cached_property
     def api_model_ids(self) -> list[str]:
         try:
+            client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
             return [m.id for m in client.models.list().data]
         except openai.OpenAIError as err:
             # Errors can happen when running eval with completion function that uses custom
@@ -173,7 +172,16 @@ class Registry:
             return None
 
         logger.debug(f"Looking for {name}")
+        seen_aliases: set[str] = set()
+        alias_chain: list[str] = []
         while True:
+            if name in seen_aliases:
+                cycle_start = alias_chain.index(name)
+                cycle = " -> ".join([*alias_chain[cycle_start:], name])
+                raise ValueError(f"Alias cycle detected for {object} '{name}': {cycle}")
+
+            seen_aliases.add(name)
+            alias_chain.append(name)
             alias = get_alias()
 
             if alias is None:

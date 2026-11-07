@@ -27,6 +27,14 @@ SHUFFLE_SEED = 123
 _MAX_SAMPLES = None
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    """Return a boolean environment flag while preserving the default when unset."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes"}
+
+
 def _index_samples(samples: List[Any]) -> List[Tuple[Any, int]]:
     """Shuffle `samples` and pair each sample with its index."""
     indices = list(range(len(samples)))
@@ -38,7 +46,7 @@ def _index_samples(samples: List[Any]) -> List[Tuple[Any, int]]:
     return work_items
 
 
-def set_max_samples(max_samples: int):
+def set_max_samples(max_samples: Optional[int]):
     global _MAX_SAMPLES
     _MAX_SAMPLES = max_samples
 
@@ -105,7 +113,7 @@ class Eval(abc.ABC):
         futures = [asyncio.ensure_future(eval_fn_with_semaphore(args)) for args in work_items]
 
         for future in tqdm(
-            asyncio.as_completed(futures), total=len(samples), disable=not show_progress
+            asyncio.as_completed(futures), total=len(work_items), disable=not show_progress
         ):
             await future
 
@@ -122,7 +130,7 @@ class Eval(abc.ABC):
         """
         work_items = _index_samples(samples)
         threads = int(os.environ.get("EVALS_THREADS", "10"))
-        show_progress = bool(os.environ.get("EVALS_SHOW_EVAL_PROGRESS", show_progress))
+        show_progress = _env_bool("EVALS_SHOW_EVAL_PROGRESS", show_progress)
 
         def eval_sample(args):
             """
@@ -209,7 +217,7 @@ class SolverEval(Eval):
         """
         work_items = _index_samples(samples)
         threads = int(os.environ.get("EVALS_THREADS", "10"))
-        show_progress = bool(os.environ.get("EVALS_SHOW_EVAL_PROGRESS", show_progress))
+        show_progress = _env_bool("EVALS_SHOW_EVAL_PROGRESS", show_progress)
 
         def eval_sample(args):
             """
