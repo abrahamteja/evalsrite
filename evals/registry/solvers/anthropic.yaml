@@ -1,4 +1,16 @@
 # ------------------
+# Any Claude model
+# Pass the model id at run time, for example:
+#   oaieval generation/direct/anthropic enterprise-readiness --completion_args model_name=<model id>
+# The Anthropic SDK reads the API key from the ANTHROPIC_API_KEY environment variable.
+# ------------------
+
+generation/direct/anthropic:
+  class: evals.solvers.providers.anthropic.anthropic_solver:AnthropicSolver
+  args:
+    max_tokens: 1024
+
+# ------------------
 # claude-3-opus-20240229
 # ------------------
 
