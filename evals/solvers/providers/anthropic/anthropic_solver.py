@@ -2,7 +2,7 @@ from typing import Any, Optional, Union
 
 import anthropic
 from anthropic import Anthropic
-from anthropic.types import MessageParam, TextBlock, Usage
+from anthropic.types import Usage
 
 from evals.record import record_sampling
 from evals.solvers.solver import Solver, SolverResult
@@ -60,7 +60,8 @@ class AnthropicSolver(Solver):
             **{**kwargs, **self.extra_options},
         )
         solver_result = SolverResult(
-            output=response.content[0].text, raw_completion_result=response.content
+            output="".join(block.text for block in response.content if block.type == "text"),
+            raw_completion_result=response.content,
         )
 
         # for logging purposes: prepend the task desc to the orig msgs as a system message
@@ -86,21 +87,24 @@ class AnthropicSolver(Solver):
         return self.model_name
 
     @staticmethod
-    def _convert_msgs_to_anthropic_format(msgs: list[Message]) -> list[MessageParam]:
+    def _convert_msgs_to_anthropic_format(msgs: list[Message]) -> list[dict]:
         """
         Anthropic API requires that the message list has
         - Roles as 'user' or 'assistant'
         - Alternating 'user' and 'assistant' messages
+
+        Messages are plain dicts in the shape the SDK accepts, so this works
+        whether the installed SDK defines MessageParam as a TypedDict or a Union.
 
         Note: the top-level system prompt is handled separately and should not be
         included in the messages list.
         """
         # enforce valid roles; convert to Anthropic message type
         anth_msgs = [
-            MessageParam(
-                role=oai_to_anthropic_role[msg.role],
-                content=[TextBlock(text=msg.content, type="text")],
-            )
+            {
+                "role": oai_to_anthropic_role[msg.role],
+                "content": [{"type": "text", "text": msg.content}],
+            }
             for msg in msgs
         ]
         # enforce alternating roles by merging consecutive messages with the same role
