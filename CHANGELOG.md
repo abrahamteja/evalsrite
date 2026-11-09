@@ -4,6 +4,16 @@ Evalrite is a maintained fork of [OpenAI Evals](https://github.com/openai/evals)
 
 ## Unreleased
 
+### Added
+
+- Enterprise readiness eval: 47 questions on fictional security and data protection policies, graded deterministically for JSON validity, grounded citations, abstention and prompt-injection resistance (`evals/elsuite/enterprise_readiness`)
+- `generation/direct/anthropic` solver, which runs any Claude model passed with `--completion_args model_name=...`
+
+### Fixed
+
+- Replace the removed Anthropic `ContentBlock` type with `TextBlock` (Anthropic commit of openai/evals#1537, by sakher; that PR's OpenAI and Gemini changes aren't brought in yet)
+- Send Anthropic messages as plain dicts so the solver works with current Anthropic SDKs, where `MessageParam` is a Union, and join all text blocks in a reply; adds a stubbed-client test that needs no API key
+
 ### Fixed (brought in from upstream pull requests)
 
 - Create the registry's OpenAI client only when needed, so importing works without an API key (openai/evals#1724, by Sylvester Kaczmarek)

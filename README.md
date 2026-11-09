@@ -8,6 +8,12 @@ If you are building with LLMs, creating high quality evals is one of the most im
 
 <img width="596" alt="https://x.com/gdb/status/1733553161884127435?s=20" src="https://github.com/openai/evals/assets/35577566/ce7840ff-43a8-4d88-bb2f-6b207410333b">
 
+## Evalrite additions
+
+Evalrite is a maintained fork of OpenAI Evals. Beyond the upstream fixes listed in [CHANGELOG.md](CHANGELOG.md), it adds:
+
+- **[Enterprise readiness](evals/elsuite/enterprise_readiness/README.md):** an original eval of grounded, cited, JSON-structured answers to security and data protection policy questions, including questions the policies don't cover and quoted text that tries to inject instructions. It runs against Claude with `oaieval generation/direct/anthropic enterprise-readiness --completion_args model_name=<claude model id>` and an `ANTHROPIC_API_KEY` in your environment, or against any other registered solver.
+
 ## Setup
 
 To run evals, you will need to set up and specify your [OpenAI API key](https://platform.openai.com/account/api-keys). After you obtain an API key, specify it using the [`OPENAI_API_KEY` environment variable](https://platform.openai.com/docs/quickstart/step-2-setup-your-api-key). Please be aware of the [costs](https://openai.com/pricing) associated with using the API when running evals. You can also run and create evals using [Weights & Biases](https://wandb.ai/wandb_fc/openai-evals/reports/OpenAI-Evals-Demo-Using-W-B-Prompts-to-Run-Evaluations--Vmlldzo0MTI4ODA3).

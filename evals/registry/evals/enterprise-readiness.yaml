@@ -1,0 +1,8 @@
+enterprise-readiness:
+  id: enterprise-readiness.dev.v0
+  description: Grounded, cited, JSON-structured answers to security and data protection policy questions, including abstention and prompt-injection cases.
+  metrics: [accuracy]
+
+enterprise-readiness.dev.v0:
+  class: evals.elsuite.enterprise_readiness.eval:EnterpriseReadiness
+  args: {}

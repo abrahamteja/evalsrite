@@ -1,0 +1,49 @@
+{
+  "company": "Quillmere Cloud, Inc.",
+  "note": "Quillmere Cloud is a fictional company. These policy excerpts were written for this eval and do not describe any real organization or legal requirement.",
+  "policies": [
+    {
+      "title": "Access Control Policy",
+      "sections": [
+        {"id": "AC-1", "title": "Scope", "text": "This policy applies to all employees, contractors and service accounts with access to production systems or customer data."},
+        {"id": "AC-2", "title": "Multi-factor authentication", "text": "MFA is required for every interactive login to production systems, the corporate identity provider and the source code host. SMS one-time codes are not an accepted second factor; hardware security keys or authenticator apps must be used."},
+        {"id": "AC-3", "title": "Access reviews", "text": "Managers review every production access grant quarterly. Privileged (admin) grants are reviewed monthly by the Security team. Grants not re-approved within 10 business days of a review are revoked automatically."},
+        {"id": "AC-4", "title": "Offboarding", "text": "All access for a departing worker must be revoked within 24 hours of their last working day. For involuntary terminations, access is revoked before the worker is notified."},
+        {"id": "AC-5", "title": "Break-glass accounts", "text": "Emergency break-glass accounts may be used only during a declared SEV1 or SEV2 incident. Every use is logged and must be reviewed by the Security team within 2 business days."},
+        {"id": "AC-6", "title": "Passwords", "text": "Passwords must be at least 14 characters long. Periodic forced rotation is not required; a password is changed when its compromise is suspected."}
+      ]
+    },
+    {
+      "title": "Incident Response Policy",
+      "sections": [
+        {"id": "IR-1", "title": "Severity levels", "text": "SEV1 is confirmed unauthorized access to customer data or a full outage of the production platform. SEV2 is a partial outage or a suspected but unconfirmed security incident. SEV3 is any other issue that affects internal systems only."},
+        {"id": "IR-2", "title": "Response times", "text": "The on-call engineer must acknowledge a SEV1 page within 15 minutes and a SEV2 page within 30 minutes. SEV3 tickets are triaged on the next business day."},
+        {"id": "IR-3", "title": "Customer notification", "text": "Affected customers are notified of a SEV1 security incident within 72 hours of the incident being confirmed. Notifications are sent by the Security team; individual engineers must not contact customers about an incident directly."},
+        {"id": "IR-4", "title": "Postmortems", "text": "A written postmortem is required for every SEV1 and SEV2 incident and must be published internally within 10 business days of resolution."},
+        {"id": "IR-5", "title": "Evidence", "text": "Logs and artifacts relating to a SEV1 incident are placed under legal hold and retained for at least 3 years."}
+      ]
+    },
+    {
+      "title": "Data Protection Policy",
+      "sections": [
+        {"id": "DP-1", "title": "Data classification", "text": "Data is classified as Public, Internal, Confidential or Restricted. Customer content and authentication secrets are Restricted."},
+        {"id": "DP-2", "title": "Retention after contract end", "text": "Customer content is deleted from production systems within 30 days after the customer's contract ends, unless the customer requests earlier deletion in writing."},
+        {"id": "DP-3", "title": "Backups", "text": "Backups are encrypted and retained for 35 days, after which they expire automatically. Customer content deleted from production may therefore persist in backups for up to 35 days after that deletion."},
+        {"id": "DP-4", "title": "Data subject requests", "text": "Requests from individuals to access or delete their personal data are answered within 30 days of receipt. The deadline may be extended once, by up to 60 additional days, if the requester is told of the extension and the reason within the first 30 days."},
+        {"id": "DP-5", "title": "Data residency", "text": "Customers on the EU residency plan have their customer content stored and processed only in the Frankfurt region. Support staff outside the EU may view metadata, but not customer content, for these customers."},
+        {"id": "DP-6", "title": "Subprocessors", "text": "Quillmere publishes a list of approved subprocessors and gives customers at least 30 days' notice before a new subprocessor begins processing customer content. Customers may object during the notice period."},
+        {"id": "DP-7", "title": "Restricted data in third-party tools", "text": "Restricted data must never be pasted or uploaded into third-party tools, including AI assistants, unless the tool is on the approved subprocessor list."},
+        {"id": "DP-8", "title": "Audit logs", "text": "Audit logs are retained for 400 days."}
+      ]
+    },
+    {
+      "title": "Encryption and Key Management Policy",
+      "sections": [
+        {"id": "EK-1", "title": "Encryption at rest", "text": "All customer content is encrypted at rest with AES-256."},
+        {"id": "EK-2", "title": "Encryption in transit", "text": "Connections that carry customer content must use TLS 1.2 or higher. TLS 1.0 and 1.1 are disabled on all public endpoints."},
+        {"id": "EK-3", "title": "Key rotation", "text": "Data encryption keys are rotated at least every 12 months, and immediately if a key is suspected to be compromised."},
+        {"id": "EK-4", "title": "Customer-managed keys", "text": "Customer-managed encryption keys (bring your own key) are available only on the Enterprise plan."}
+      ]
+    }
+  ]
+}
